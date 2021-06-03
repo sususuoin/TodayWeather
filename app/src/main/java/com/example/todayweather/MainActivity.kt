@@ -35,71 +35,91 @@ class MainActivity : AppCompatActivity() {
         var city: String? = null
     }
 
+    private fun getLocation() {
+        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val isGPSEnabled: Boolean = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val isNetworkEnabled: Boolean = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        //매니페스트에 권한이 추가되어 있다해도 여기서 다시 한번 확인해야함
+        if (Build.VERSION.SDK_INT >= 30 &&
+            ContextCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this@MainActivity,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                0
+            )
+        } else {
+            when { //프로바이더 제공자 활성화 여부 체크
+                isNetworkEnabled -> {
+                    val location =
+                        lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) //인터넷기반으로 위치를 찾음
+                    getLongitude = location?.longitude!!
+                    getLatitude = location.latitude
+                    Toast.makeText(this, "현재위치를 불러옵니다.", Toast.LENGTH_SHORT).show()
+                    Log.d(
+                        "호롤",
+                        "죽여라" + "위도" + getLatitude + "경도" + getLongitude + "zz" + gpsLocationListener
+                    )
+
+                    val mGeoCoder = Geocoder(applicationContext, Locale.KOREAN)
+                    var mResultList: List<Address>? = null
+                    try {
+                        mResultList = mGeoCoder.getFromLocation(
+                            getLatitude!!, getLongitude!!, 1
+                        )
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                    if (mResultList != null) {
+                        // 내 주소 가져오기
+                        city = mResultList[0].getAddressLine(0)
+                        Log.d("내 주소 ", mResultList[0].getAddressLine(0))
+                    }
+                }
+                isGPSEnabled -> {
+                    val location =
+                        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) //GPS 기반으로 위치를 찾음
+                    getLongitude = location?.longitude!!
+                    getLatitude = location.latitude
+                    Toast.makeText(this, "현재위치를 불러옵니다.", Toast.LENGTH_SHORT).show()
+                    Log.d("호롤", "죽여라" + "위도" + getLatitude + "경도" + getLongitude)
+
+                    val mGeoCoder = Geocoder(applicationContext, Locale.KOREAN)
+                    var mResultList: List<Address>? = null
+                    try {
+                        mResultList = mGeoCoder.getFromLocation(
+                            getLatitude!!, getLongitude!!, 1
+                        )
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                    if (mResultList != null) {
+                        // 내 주소 가져오기
+                        city = mResultList[0].getAddressLine(0)
+                        Log.d("내 주소 ", mResultList[0].getAddressLine(0))
+                    }
+                }
+                else -> {
+
+                }
+            }
+        }
+    }
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        getLocation()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         btn_city?.setOnClickListener {
-            val isGPSEnabled: Boolean = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            val isNetworkEnabled: Boolean = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-            //매니페스트에 권한이 추가되어 있다해도 여기서 다시 한번 확인해야함
-            if (Build.VERSION.SDK_INT >= 30 &&
-                    ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
-            } else {
-                when { //프로바이더 제공자 활성화 여부 체크
-                    isNetworkEnabled -> {
-                        val location =
-                                lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) //인터넷기반으로 위치를 찾음
-                        getLongitude = location?.longitude!!
-                        getLatitude = location.latitude
-                        Toast.makeText(this, "현재위치를 불러옵니다.", Toast.LENGTH_SHORT).show()
-                        Log.d("호롤", "죽여라" + "위도" + getLatitude + "경도" + getLongitude+"zz"+gpsLocationListener)
+            getLocation()
 
-                        val mGeoCoder =  Geocoder(applicationContext, Locale.KOREAN)
-                        var mResultList: List<Address>? = null
-                        try{
-                            mResultList = mGeoCoder.getFromLocation(
-                                    getLatitude!!, getLongitude!!, 1
-                            )
-                        }catch(e: IOException){
-                            e.printStackTrace()
-                        }
-                        if(mResultList != null){
-                            // 내 주소 가져오기
-                            city = mResultList[0].getAddressLine(0)
-                            Log.d("내 주소 ", mResultList[0].getAddressLine(0)) }
-                    }
-                    isGPSEnabled -> {
-                        val location =
-                                lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) //GPS 기반으로 위치를 찾음
-                        getLongitude = location?.longitude!!
-                        getLatitude = location.latitude
-                        Toast.makeText(this, "현재위치를 불러옵니다.", Toast.LENGTH_SHORT).show()
-                        Log.d("호롤", "죽여라" + "위도" + getLatitude + "경도" + getLongitude)
-
-                        val mGeoCoder =  Geocoder(applicationContext, Locale.KOREAN)
-                        var mResultList: List<Address>? = null
-                        try{
-                            mResultList = mGeoCoder.getFromLocation(
-                                    getLatitude!!, getLongitude!!, 1
-                            )
-                        }catch(e: IOException){
-                            e.printStackTrace()
-                        }
-                        if(mResultList != null){
-                            // 내 주소 가져오기
-                            city = mResultList[0].getAddressLine(0)
-                            Log.d("내 주소 ", mResultList[0].getAddressLine(0))
-                        }
-                    }
-                    else -> {
-
-                    }
-                }
             }
 
 
@@ -148,9 +168,9 @@ class MainActivity : AppCompatActivity() {
                             "50n", "50d" -> img_weather.setImageResource(R.drawable.ic_mist)
                         }
 
-                        btn_city.text = city
+                        tv_city.text = city
 
-                        btn_city.text = cutting?.subList(2, 5).toString().replace(",", " ").replace("[", " ").replace("]", " ") // []가 같이 출력되어서 []를 공백으로 치환
+                        tv_city.text = cutting?.subList(2, 5).toString().replace(",", " ").replace("[", " ").replace("]", " ") // []가 같이 출력되어서 []를 공백으로 치환
                         Log.d("[]왜나와", "함보자" + btn_city.text)
 
                         tv_MinMaxTemp.text = intMinTemp.toString() + "\u00B0" + "/" + intMaxTemp.toString() + "\u00B0"
@@ -160,9 +180,10 @@ class MainActivity : AppCompatActivity() {
 
             })
         }
-        lm.removeUpdates(gpsLocationListener)
-    }
-} // oncreate 대괄호
+//        lm.removeUpdates(gpsLocationListener)
+    } // oncreate 대괄호
+
+
 
 val gpsLocationListener = object : LocationListener {
     override fun onLocationChanged(location: Location) {
